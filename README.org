@@ -1,0 +1,90 @@
+#+TITLE: README
+#+AUTHOR: fran
+#+LANGUAGE: es
+#+STARTUP: content indent showeverything
+#+DESCRIPTION: Declaracion de intenciones en el proyecto
+#+OPTIONS: results:nil
+
+* INTRODUCCIÓN
+
+Esto debería ser una implementación de un microservicio de autenticación y administración de usuarios.
+
+Debería proveer mecanismos para la creación, modificación y eliminación de usuarios. Asignarles roles y permisos. Devolver un token con sus credenciales para ser utilizadas por otros servicios.
+
+Tambien deberia permitir organizar permisos y usuarios en base a diferentes organizaciones.
+
+Este proyecto incluye el servidor y la bd correspondiente.
+
+* Config ejemplo
+#+begin_src json :tangle config.json
+  {
+    "server_port": 4567,
+    "db": "Autenticacion",
+    "db_port": 3306,
+    "db_usuario": "root",
+    "db_contra": "root",
+    "db_max_con": 50,
+    "jwt_secret": "clave-secreta-123",
+    "limite_peticiones" : 20,
+    "nivel_debug" : 0
+}
+#+end_src
+
+Niveles debug:
+0 Panic
+1 Fatal
+2 Error
+3 Warning
+4 Info
+5 Debug
+6 Trace
+
+* TODO Pendiente
+** DONE Alta Rol
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Alta Permiso
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Baja Rol
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Baja Permiso
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Listar Rol
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Listar Permisos
+CLOSED: [2025-08-22 vie 01:21]
+** DONE Asignar Permiso a Rol
+CLOSED: [2025-08-18 lun 22:52]
+** DONE Quitar Permiso a Rol
+CLOSED: [2025-08-18 lun 22:52]
+** DONE Agregar Rol a Usuario
+CLOSED: [2025-08-18 lun 22:51]
+** DONE Quitar Rol a Usuario
+CLOSED: [2025-08-18 lun 22:51]
+** DONE Eliminar usuarios
+CLOSED: [2025-08-17 dom 20:43]
+** DONE Modificar usuarios
+CLOSED: [2025-08-17 dom 20:43]
+** TODO Revisar controles en usuarios
+*** Campos Alta
+*** Campos Modificar
+Actualmente modifica mal
+** TODO Terminar refresh/access tokens
+*** DONE Falta ruta [[file:controles/usuario.go::func RefreshToken(c echo.Context) error {][refresh]]
+CLOSED: [2025-08-23 sáb 01:43]
+*** DONE Falta actualizar sesion a inactiva cuando expira en bd
+CLOSED: [2025-08-23 sáb 01:43]
+*** TODO Agregar ruta logout para invalidar access tokens
+** TODO Agregar auditoría
+*** Registrar acciones de usuarios en bd
+** DONE Control de numero de peticiones por ip/cliente
+CLOSED: [2025-08-23 sáb 20:27]
+*** DONE Limitar a maximo peticiones por minuto
+CLOSED: [2025-08-30 sáb 21:26]
+** TODO Utilizar campo estado activo/inactivo de la bd
+*** Usuario inactivo no deberia poder loguearse
+*** Agregar estado "baneado"?
+** TODO Refactorizar respuestas
+** DONE Permitir multi-rol
+CLOSED: [2025-08-30 sáb 21:05]
+** TODO Empresa
+*** TODO roles-empreas

@@ -1,0 +1,664 @@
+#+TITLE: Microservicio Login - API
+#+AUTHOR: fran
+#+LANGUAGE: es
+#+STARTUP: content indent showeverything
+#+DESCRIPTION: API del microservicio Login
+#+PROPERTY: exports both
+#+OPTIONS: results:t
+* API :verb:
+template http://localhost:4567
+Accept: application/json
+** Usuarios
+*** Alta
+Crea un nuevo usuario en la bd.
+#+begin_src verb
+  post /registrar
+  Content-Type: application/json; charset=utf-8
+  
+  {
+  "usuario": "Usuarioasd",
+  "email": "21edasd@gmail.com",
+  "nombre": "asd123123da",
+  "contra": "dsaasdasd"
+  }
+#+end_src
+
+#+RESULTS:
+: HTTP/1.1 200 OK
+: Content-Type: application/json
+: Date: Sun, 31 Aug 2025 00:57:35 GMT
+: Content-Length: 27
+: 
+: {
+:   "mensaje": "Alta exitosa"
+: }
+
+*** Login
+:properties:
+:Verb-Store: res-login
+:end:
+#+begin_src verb
+  post /login
+  Content-Type: application/json; charset=utf-8
+
+  {
+  "usuario": "fran",
+  "contra": "123"
+  }
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:57:40 GMT
+Content-Length: 832
+
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTY2MDI3NjAsInJvbGVzIjoiW3tcImlkXCI6IDEsIFwibm9tYnJlXCI6IFwiQURNSU5cIiwgXCJwZXJtaXNvc1wiOiBbe1wiaWRcIjogMSwgXCJub21icmVcIjogXCJVU1VBUklPX0FMVEFcIn0se1wiaWRcIjogMiwgXCJub21icmVcIjogXCJVU1VBUklPX0JBSkFcIn0se1wiaWRcIjogMywgXCJub21icmVcIjogXCJVU1VBUklPX0xJU1RBUlwifSx7XCJpZFwiOiA0LCBcIm5vbWJyZVwiOiBcIlVTVUFSSU9fTU9ESUZJQ0FSXCJ9XX1dIiwidGlwbyI6ImFjY2VzcyIsInVzdWFyaW8iOjF9.pg6Mvh_Dc09GUhcQhCWWnyeix5bQqACyTJCKihMhhQc",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcyMDY2NjAsInRpcG8iOiJyZWZyZXNoIiwidXN1YXJpbyI6MX0.TllSbLgFwt8Jwx-b5sihmtxcbzuDBlrvLrD29LShUUA",
+  "roles": [
+    {
+      "id": 1,
+      "nombre": "ADMIN",
+      "permisos": [
+        {
+          "id": 1,
+          "nombre": "USUARIO_ALTA"
+        },
+        {
+          "id": 2,
+          "nombre": "USUARIO_BAJA"
+        },
+        {
+          "id": 3,
+          "nombre": "USUARIO_LISTAR"
+        },
+        {
+          "id": 4,
+          "nombre": "USUARIO_MODIFICAR"
+        }
+      ]
+    }
+  ]
+}
+#+end_example
+
+*** Refresh
+
+#+begin_src verb
+  get /r
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "refresh_token")}}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:57:49 GMT
+Content-Length: 832
+
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTY2MDI3NjksInJvbGVzIjoiW3tcImlkXCI6IDEsIFwibm9tYnJlXCI6IFwiQURNSU5cIiwgXCJwZXJtaXNvc1wiOiBbe1wiaWRcIjogMSwgXCJub21icmVcIjogXCJVU1VBUklPX0FMVEFcIn0se1wiaWRcIjogMiwgXCJub21icmVcIjogXCJVU1VBUklPX0JBSkFcIn0se1wiaWRcIjogMywgXCJub21icmVcIjogXCJVU1VBUklPX0xJU1RBUlwifSx7XCJpZFwiOiA0LCBcIm5vbWJyZVwiOiBcIlVTVUFSSU9fTU9ESUZJQ0FSXCJ9XX1dIiwidGlwbyI6ImFjY2VzcyIsInVzdWFyaW8iOjF9.NEGdaN0nGrNJe7wss5dc88d33JWjTKcDg3_NWYeTUl4",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcyMDY2NjAsInRpcG8iOiJyZWZyZXNoIiwidXN1YXJpbyI6MX0.TllSbLgFwt8Jwx-b5sihmtxcbzuDBlrvLrD29LShUUA",
+  "roles": [
+    {
+      "id": 1,
+      "nombre": "ADMIN",
+      "permisos": [
+        {
+          "id": 1,
+          "nombre": "USUARIO_ALTA"
+        },
+        {
+          "id": 2,
+          "nombre": "USUARIO_BAJA"
+        },
+        {
+          "id": 3,
+          "nombre": "USUARIO_LISTAR"
+        },
+        {
+          "id": 4,
+          "nombre": "USUARIO_MODIFICAR"
+        }
+      ]
+    }
+  ]
+}
+#+end_example
+
+*** Alta Rol
+#+begin_src verb
+  post /p/usuario/4/rol
+  Content-Type: application/json; charset=utf-8
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+
+  {
+  "rol_id": 2
+  }
+#+end_src
+
+#+RESULTS:
+: HTTP/1.1 200 OK
+: Content-Type: application/json
+: Date: Sun, 31 Aug 2025 00:58:08 GMT
+: Content-Length: 36
+: 
+: {
+:   "mensaje": "Modificación exitosa"
+: }
+*** Baja Rol
+#+begin_src verb
+  delete /p/usuario/2/rol
+  Content-Type: application/json; charset=utf-8
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+
+  {
+  "rol_id": 2
+  }
+#+end_src
+
+#+RESULTS:
+: HTTP/1.1 200 OK
+: Content-Type: application/json
+: Date: Sun, 31 Aug 2025 00:58:15 GMT
+: Content-Length: 27
+: 
+: {
+:   "mensaje": "Baja exitosa"
+: }
+
+*** Paginado
+#+begin_src verb
+  get /p/usuario
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:58:19 GMT
+Content-Length: 798
+
+{
+  "datos": [
+    {
+      "id": 1,
+      "usuario": "fran",
+      "email": "fran1@gmail.com",
+      "nombre": null,
+      "telefono": null,
+      "direccion": null,
+      "roles": [
+        {
+          "id": 1,
+          "nombre": "ADMIN",
+          "permisos": [
+            {
+              "id": 1,
+              "nombre": "USUARIO_ALTA"
+            },
+            {
+              "id": 2,
+              "nombre": "USUARIO_BAJA"
+            },
+            {
+              "id": 3,
+              "nombre": "USUARIO_LISTAR"
+            },
+            {
+              "id": 4,
+              "nombre": "USUARIO_MODIFICAR"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "usuario": "fran2",
+      "email": "fran2@gmail.com",
+      "nombre": null,
+      "telefono": null,
+      "direccion": null,
+      "roles": null
+    },
+    {
+      "id": 3,
+      "usuario": "fran3",
+      "email": "fran3@gmail.com",
+      "nombre": null,
+      "telefono": null,
+      "direccion": null,
+      "roles": [
+        {
+          "id": 3,
+          "nombre": "USUARIO",
+          "permisos": null
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "usuario": "Usuarioasd",
+      "email": "21edasd@gmail.com",
+      "nombre": "asd123123da",
+      "telefono": null,
+      "direccion": null,
+      "roles": [
+        {
+          "id": 2,
+          "nombre": "EMPLEADO",
+          "permisos": [
+            {
+              "id": 3,
+              "nombre": "USUARIO_LISTAR"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mensaje": "Peticion exitosa"
+}
+#+end_example
+
+Paginado args
+#+begin_src verb 
+  get /p/usuario?diferencia=0&limite=2
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}  
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:55:11 GMT
+Content-Length: 515
+
+{
+  "datos": [
+    {
+      "id": 1,
+      "usuario": "fran",
+      "email": "fran1@gmail.com",
+      "nombre": null,
+      "telefono": null,
+      "direccion": null,
+      "roles": [
+        {
+          "id": 1,
+          "nombre": "ADMIN",
+          "permisos": [
+            {
+              "id": 1,
+              "nombre": "USUARIO_ALTA"
+            },
+            {
+              "id": 2,
+              "nombre": "USUARIO_BAJA"
+            },
+            {
+              "id": 3,
+              "nombre": "USUARIO_LISTAR"
+            },
+            {
+              "id": 4,
+              "nombre": "USUARIO_MODIFICAR"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "usuario": "fran2",
+      "email": "fran2@gmail.com",
+      "nombre": null,
+      "telefono": null,
+      "direccion": null,
+      "roles": [
+        {
+          "id": 2,
+          "nombre": "EMPLEADO",
+          "permisos": [
+            {
+              "id": 3,
+              "nombre": "USUARIO_LISTAR"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mensaje": "Peticion exitosa"
+}
+#+end_example
+
+*** Modificar
+#+begin_src verb 
+  put /p/usuario/4
+  Content-Type: application/json; charset=utf-8
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+
+  {
+  "usuario": "Usuarioasd",
+  "email": "testeomanwsadawseito@test.com",
+  "nombre":"uwuwuwu",
+  "telefono":"266503231",
+  "direccion":"Martin de Loyola 1524",
+  "contra": "121231233"
+  }
+#+end_src
+
+#+RESULTS:
+: HTTP/1.1 200 OK
+: Content-Type: application/json
+: Date: Sun, 31 Aug 2025 00:58:31 GMT
+: Content-Length: 36
+: 
+: {
+:   "mensaje": "Modificación exitosa"
+: }
+
+*** Buscar
+#+begin_src verb
+  get /p/usuario/4
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:58:35 GMT
+Content-Length: 276
+
+{
+  "datos": {
+    "id": 4,
+    "usuario": "Usuarioasd",
+    "email": "testeomanwsadawseito@test.com",
+    "nombre": "uwuwuwu",
+    "telefono": "266503231",
+    "direccion": "Martin de Loyola 1524",
+    "roles": [
+      {
+        "id": 2,
+        "nombre": "EMPLEADO",
+        "permisos": [
+          {
+            "id": 3,
+            "nombre": "USUARIO_LISTAR"
+          }
+        ]
+      }
+    ]
+  },
+  "mensaje": "Peticion exitosa"
+}
+#+end_example
+
+*** Baja
+#+begin_src verb
+  delete /p/usuario/4
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+#+end_src
+
+#+RESULTS:
+: HTTP/1.1 200 OK
+: Content-Type: application/json
+: Date: Sun, 31 Aug 2025 00:58:41 GMT
+: Content-Length: 27
+: 
+: {
+:   "mensaje": "Baja exitosa"
+: }
+
+** Permisos
+*** Alta
+#+begin_src verb
+  post /p/permiso
+  Content-Type: application/json; charset=utf-8
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+
+  {
+  "nombre": "PERMISO_DESDE_API"
+  }
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:58:44 GMT
+Content-Length: 53
+
+{
+  "datos": {
+    "id": 5
+  },
+  "mensaje": "Modificación exitosa"
+}
+#+end_example
+*** Buscar
+#+begin_src verb 
+  get /p/permiso/1
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:58:48 GMT
+Content-Length: 72
+
+{
+  "datos": {
+    "id": 1,
+    "nombre": "USUARIO_ALTA"
+  },
+  "mensaje": "Peticion exitosa"
+}
+#+end_example
+*** Paginado
+#+begin_src verb
+  get /p/permiso
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:58:51 GMT
+Content-Length: 218
+
+{
+  "datos": [
+    {
+      "id": 1,
+      "nombre": "USUARIO_ALTA"
+    },
+    {
+      "id": 2,
+      "nombre": "USUARIO_BAJA"
+    },
+    {
+      "id": 3,
+      "nombre": "USUARIO_LISTAR"
+    },
+    {
+      "id": 4,
+      "nombre": "USUARIO_MODIFICAR"
+    },
+    {
+      "id": 5,
+      "nombre": "PERMISO_DESDE_API"
+    }
+  ],
+  "mensaje": "Peticion exitosa"
+}
+#+end_example
+
+** Rol
+*** Alta
+#+begin_src verb
+  post /p/rol
+  Content-Type: application/json; charset=utf-8
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+
+  {
+  "nombre": "ROL_DESDE_API"
+  }
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:58:55 GMT
+Content-Length: 53
+
+{
+  "datos": {
+    "id": 4
+  },
+  "mensaje": "Modificación exitosa"
+}
+#+end_example
+*** Buscar
+#+begin_src verb
+  get /p/rol/4
+  Content-Type: application/json; charset=utf-8
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:58:58 GMT
+Content-Length: 89
+
+{
+  "datos": {
+    "id": 4,
+    "nombre": "ROL_DESDE_API",
+    "permisos": null
+  },
+  "mensaje": "Peticion exitosa"
+}
+#+end_example
+
+*** Alta permiso
+#+begin_src verb
+  post /p/rol/4
+  Content-Type: application/json; charset=utf-8
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+
+  {
+  "permiso_id": 5
+  }
+#+end_src
+
+#+RESULTS:
+: HTTP/1.1 200 OK
+: Content-Type: application/json
+: Date: Sun, 31 Aug 2025 00:59:04 GMT
+: Content-Length: 36
+: 
+: {
+:   "mensaje": "Modificación exitosa"
+: }
+*** Baja Permiso
+#+begin_src verb
+  delete /p/rol/2
+  Content-Type: application/json; charset=utf-8
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+
+  {
+  "permiso_id": 5
+  }
+#+end_src
+
+#+RESULTS:
+: HTTP/1.1 200 OK
+: Content-Type: application/json
+: Date: Sun, 31 Aug 2025 00:59:09 GMT
+: Content-Length: 27
+: 
+: {
+:   "mensaje": "Baja exitosa"
+: }
+
+*** Paginado
+
+#+begin_src verb
+  get /p/rol
+  Authorization: Bearer {{(verb-json-get (oref (verb-stored-response "res-login") body) "access_token")}}
+#+end_src
+
+#+RESULTS:
+#+begin_src ob-verb-response
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sun, 31 Aug 2025 00:50:43 GMT
+Content-Length: 425
+
+{
+  "datos": [
+    {
+      "id": 1,
+      "nombre": "ADMIN",
+      "permisos": [
+        {
+          "id": 1,
+          "nombre": "USUARIO_ALTA"
+        },
+        {
+          "id": 2,
+          "nombre": "USUARIO_BAJA"
+        },
+        {
+          "id": 3,
+          "nombre": "USUARIO_LISTAR"
+        },
+        {
+          "id": 4,
+          "nombre": "USUARIO_MODIFICAR"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nombre": "EMPLEADO",
+      "permisos": [
+        {
+          "id": 3,
+          "nombre": "USUARIO_LISTAR"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "nombre": "USUARIO",
+      "permisos": null
+    },
+    {
+      "id": 4,
+      "nombre": "ROL_DESDE_API",
+      "permisos": [
+        {
+          "id": 5,
+          "nombre": "PERMISO_DESDE_API"
+        }
+      ]
+    }
+  ],
+  "mensaje": "Peticion exitosa"
+}
+#+end_src
