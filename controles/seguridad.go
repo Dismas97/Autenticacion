@@ -7,7 +7,6 @@ import (
 		"net/http"
 		"strconv"
 		"time"
-
 		_ "github.com/go-sql-driver/mysql"
 		"github.com/golang-jwt/jwt/v5"
 		"github.com/labstack/echo/v4"
@@ -35,7 +34,7 @@ func desactivarSesion(usuario_id int, refresh_token string) error {
 		query := "UPDATE Sesion SET activo = false WHERE usuario_id = ? AND refresh_token = ?"
 		_, err := utils.BD.Exec(query, usuario_id, refresh_token)
 		if err != nil {
-				log.Errorf("Error al desactivar sesión: %v", err)
+				log.Error(err)
 				return err
 		}
 		return nil
@@ -52,7 +51,7 @@ func getSesion(usuario_id int, refresh_token string) (res Sesion, err error) {
 		fila := utils.BD.QueryRow(query, usuario_id, refresh_token)
 		
 		if err := sqlstruct.ScanStruct(fila, &res); err != nil  {
-				log.Errorf("%v",err)
+				log.Error(err)
 				return res, err
 		}
 		return res, nil
@@ -97,7 +96,7 @@ func RefreshToken(c echo.Context) error {
 		claims := user.Claims.(jwt.MapClaims)
 		tipo := claims["tipo"].(string)
 		if tipo != "refresh" {
-				return c.JSON(http.StatusUnauthorized, map[string]string{"mensaje":utils.MsjResErrCredInvalidas})
+				return c.JSON(http.StatusUnauthorized, map[string]string{"msj":utils.MsjResErrCredInvalidas})
 		}
 		refresh := user.Raw
 		usuario_id := int(claims["usuario"].(float64))
@@ -109,7 +108,7 @@ func RefreshToken(c echo.Context) error {
 				}
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusNotFound)
-				return c.JSON(http.StatusNotFound, map[string]string{"mensaje":utils.MsjResErrCredInvalidas})
+				return c.JSON(http.StatusNotFound, map[string]string{"msj":utils.MsjResErrCredInvalidas})
 		}	
 		
 		usuario, err := getUsuario("u.id", strconv.Itoa(usuario_id) )
@@ -117,7 +116,7 @@ func RefreshToken(c echo.Context) error {
 		if err != nil{
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusNotFound)
-				return c.JSON(http.StatusNotFound, map[string]string{"mensaje":utils.MsjResErrCredInvalidas})
+				return c.JSON(http.StatusNotFound, map[string]string{"msj":utils.MsjResErrCredInvalidas})
 		}
 
 		dias, horas := diferenciaFechas(time.Now(), sesion.Expira)
@@ -125,34 +124,54 @@ func RefreshToken(c echo.Context) error {
 		refrescar := dias < 1
 		var access string
 		var aux []RolRes
-		if refrescar {				
-				log.Debug("Generando nuevo refresh token..")
+		if refrescar {
 				if err := desactivarSesion(sesion.Usuario_id, sesion.Refresh_token); err != nil {
 						log.Error(err)
-						return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+						return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 				}
 				access, refresh, err = generarJWT(usuario)
 				if err != nil {				
 						log.Error(err)
 						log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-						return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+						return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 				}
-		} else {				
-				log.Debug("Generando nuevo access token, refresh igual..")
+		} else {
 				access, err = generarJWTAcceso(usuario)
 				if err != nil {
 						log.Error(err)
-						return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje": utils.MsjResErrInterno})
+						return c.JSON(http.StatusInternalServerError, map[string]string{"msj": utils.MsjResErrInterno})
 				}
 		}
 		err = json.Unmarshal([]byte(*usuario.Roles),&aux)
 		if err != nil {
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
+		res := struct{				
+				Id int `json:"id" form:"id"`
+				Usuario string `json:"usuario" form:"usuario"`
+				Email string `json:"email" form:"email"`
+				Nombre *string `json:"nombre" form:"nombre"`
+				Telefono *string `json:"telefono" form:"telefono"`
+				Direccion *string `json:"direccion" form:"direccion"`
+				Roles []RolRes `json:"roles" form:"roles"`
+				RefreshToken string `json:"refresh_token" form:"refresh_token"`
+				AccessToken string `json:"access_token" form:"access_token"`
+				
+		}{
+				Id: usuario.Id,
+				Usuario: usuario.Usuario,
+				Direccion: usuario.Direccion,
+				Nombre: usuario.Nombre,
+				Telefono: usuario.Telefono,
+				Email: usuario.Email,
+				Roles: aux,
+				RefreshToken: refresh,
+				AccessToken: access,
+        }
 		log.Debugf("ApiRes: %v", http.StatusOK)
-		return c.JSON(http.StatusOK, map[string]any{"access_token": access, "refresh_token": refresh, "roles": aux})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResModExito, "res": res})
 }
 
 func FiltroCheck(c echo.Context) error {
@@ -160,12 +179,12 @@ func FiltroCheck(c echo.Context) error {
 		claims := user.Claims.(jwt.MapClaims)
 		usuario := claims["usuario"].(string)
 		roles := claims["roles"].(string)
-
-		return c.JSON(http.StatusOK, map[string]string{
-				"mensaje": "Filtro Check",
-				"usuario": usuario,
-				"roles": roles,
-		})
+		return c.JSON(http.StatusOK, map[string]any{
+				"msj": "Filtro Check",
+				"res": map[string]string{
+						"usuario": usuario,
+						"roles": roles,
+				},})
 }
 
 func FiltroSuperAdmin(next echo.HandlerFunc) echo.HandlerFunc {
@@ -174,7 +193,7 @@ func FiltroSuperAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 				claims := user.Claims.(jwt.MapClaims)
 				tipo := claims["tipo"].(string)
 				if tipo != "access" {
-						return c.JSON(http.StatusUnauthorized, map[string]string{"mensaje":utils.MsjResErrCredInvalidas})
+						return c.JSON(http.StatusUnauthorized, map[string]string{"msj":utils.MsjResErrCredInvalidas})
 				}
 				
 				rolesAux := claims["roles"].(string)
@@ -184,14 +203,13 @@ func FiltroSuperAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 				if err != nil {						
 						log.Error(err)
 						log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-						return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+						return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 				}
 				for _, r := range roles {
 						if r.Nombre == "ADMIN"{
 								return next(c)
 						}
 				}
-				return c.JSON(http.StatusUnauthorized, map[string]string{"mensaje":utils.MsjResErrNoAutorizado})
-	
+				return c.JSON(http.StatusUnauthorized, map[string]string{"msj":utils.MsjResErrNoAutorizado})
 		}
 }

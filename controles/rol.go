@@ -35,15 +35,15 @@ func BuscarRol(c echo.Context) error {
 		var rol RolAux
 		
 		if err := sqlstruct.ScanStruct(fila, &rol); err != nil  {
-				log.Errorf("BuscarRol: %v",err)
+				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno} )
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno} )
 		}
 		
 		var auxiliar []Permiso
 		err := json.Unmarshal([]byte(rol.Permisos), &auxiliar)
 		if err != nil {
-				log.Errorf("BuscarRol: %v",err)
+				log.Error(err)
 				return c.JSON(http.StatusInternalServerError, map[string]string{"msj": utils.MsjResErrInterno})
 		}		
 		if auxiliar[0].Id == 0 && auxiliar[0].Nombre == "" {
@@ -54,7 +54,7 @@ func BuscarRol(c echo.Context) error {
 				Nombre: rol.Nombre,
 				Permisos: auxiliar,
 		}		
-		return c.JSON(http.StatusOK, map[string]any{"mensaje":utils.MsjResExito, "datos":res})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResExito, "res":res})
 }
 
 func BuscarPermiso(c echo.Context) error {
@@ -63,14 +63,13 @@ func BuscarPermiso(c echo.Context) error {
 		query := "SELECT * FROM Permiso WHERE id = ?"
 		fila := utils.BD.QueryRow(query, id)
 
-		var res Permiso
-		
+		var res Permiso		
 		if err := sqlstruct.ScanStruct(fila, &res); err != nil  {
-				log.Errorf("BuscarPermiso: %v",err)
+				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno} )
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno} )
 		}
-		return c.JSON(http.StatusOK, map[string]any{"mensaje":utils.MsjResExito, "datos":res})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResExito, "res":res})
 }
 
 func ListarPermisos(c echo.Context) error {
@@ -92,9 +91,9 @@ func ListarPermisos(c echo.Context) error {
 		if err != nil {
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
-		return c.JSON(http.StatusOK, map[string]any{"mensaje":utils.MsjResExito, "datos":res})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResExito, "res":res})
 }
 
 func ListarRoles(c echo.Context) error {
@@ -117,7 +116,7 @@ func ListarRoles(c echo.Context) error {
 		if err != nil {
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
 		var res []RolRes
 		
@@ -128,7 +127,7 @@ func ListarRoles(c echo.Context) error {
 				auxPermisos = nil
 				err := json.Unmarshal([]byte(auxRol.Permisos), &auxPermisos)
 				if err != nil {
-						log.Errorf("BuscarRol: %v",err)
+						log.Error(err)
 						return c.JSON(http.StatusInternalServerError, map[string]string{"msj": utils.MsjResErrInterno})
 				}
 				
@@ -143,46 +142,43 @@ func ListarRoles(c echo.Context) error {
 				res = append(res,resindex)
 		}
 		
-		return c.JSON(http.StatusOK, map[string]any{"mensaje":utils.MsjResExito, "datos":res})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResExito, "res":res})
 }
 
 func BajaRolPermiso(c echo.Context) error {
-		var aux map[string]any
 		id := c.Param("id")
-		c.Bind(&aux)
-		if err = chequeoQueryData(aux,  []string{"permiso_id"}); err != nil{
-				log.Debugf("%s\nApiRes: %v", err, http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrFormIncorrecto})
+		permiso := c.Param("permiso")
+		if id == "" || permiso == ""{
+				log.Debugf("ApiRes: %v", http.StatusBadRequest)
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrFormIncorrecto})
 		}
 
 		query := "DELETE FROM RolPermiso WHERE rol_id = ? AND permiso_id = ?"
-		_, err := utils.BD.Exec(query, id, aux["permiso_id"])
+		_, err := utils.BD.Exec(query, id, permiso)
 		if(err != nil){
-				log.Errorf("EliminarRolPermiso: %v",err)
+				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
-		return c.JSON(http.StatusOK, map[string]string{"mensaje":utils.MsjResBajaExito})
+		return c.JSON(http.StatusOK, map[string]string{"msj":utils.MsjResBajaExito})
 }
 
-
 func AltaRolPermiso(c echo.Context) error {
-		var aux map[string]any
 		id := c.Param("id")
-		c.Bind(&aux)
-		if err = chequeoQueryData(aux,  []string{"permiso_id"}); err != nil{
-				log.Debugf("%s\nApiRes: %v", err, http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrFormIncorrecto})
+		permiso := c.Param("permiso")
+		if id == "" || permiso == ""{
+				log.Debugf("ApiRes: %v", http.StatusBadRequest)
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrFormIncorrecto})
 		}
 
 		query := "INSERT INTO RolPermiso (rol_id,permiso_id) VALUES (?, ?)"
-		_, err := utils.BD.Exec(query, id, aux["permiso_id"])
+		_, err := utils.BD.Exec(query, id, permiso)
 		if(err != nil){
-				log.Errorf("AltaRolPermiso: %v",err)
+				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}		
-		return c.JSON(http.StatusOK, map[string]string{"mensaje":utils.MsjResModExito})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResModExito})
 }
 
 func AltaRolOPermiso(c echo.Context) error {
@@ -192,20 +188,47 @@ func AltaRolOPermiso(c echo.Context) error {
 		c.Bind(&aux)
 		if  aux["nombre"] == ""  {
 				log.Debugf("ApiRes: %v", http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrFormIncorrecto})
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrFormIncorrecto})
 		}
 		query := "INSERT INTO "+tabla+" (nombre) VALUES (?)"
 		res, err := utils.BD.Exec(query, aux["nombre"])
 		if(err != nil){
-				log.Errorf("AltaRolOPermiso: %v",err)
+				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
 		resid, err :=  res.LastInsertId()
 		if(err != nil){
-				log.Errorf("AltaRolOPermiso: %v",err)
+				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
-		return c.JSON(http.StatusOK, map[string]any{"mensaje":utils.MsjResModExito, "datos":map[string]int64{"id":resid}})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResModExito, "res":map[string]int64{"id":resid}})
+}
+
+
+func BajaPermiso(c echo.Context) error {
+		id := c.Param("id")
+		
+		query := "DELETE FROM Permiso WHERE id = ?"
+		_, err := utils.BD.Exec(query, id)
+		if(err != nil){
+				log.Error(err)
+				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
+		}
+		return c.JSON(http.StatusOK, map[string]string{"msj":utils.MsjResBajaExito})
+}
+
+func BajaRol(c echo.Context) error {
+		id := c.Param("id")
+		
+		query := "DELETE FROM Rol WHERE id = ?"
+		_, err := utils.BD.Exec(query, id)
+		if(err != nil){
+				log.Error(err)
+				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
+		}
+		return c.JSON(http.StatusOK, map[string]string{"msj":utils.MsjResBajaExito})
 }

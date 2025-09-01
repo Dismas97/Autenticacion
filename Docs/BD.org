@@ -10,12 +10,6 @@
 #+begin_src sql
     SELECT u.id, u.usuario, u.email, u.nombre, u.telefono, u.direccion,
         (
-            SELECT JSON_ARRAYAGG(JSON_OBJECT('id', p.id, 'nombre', p.nombre))
-            FROM UsuarioPermiso up
-            JOIN Permiso p ON up.permiso_id = p.id
-            WHERE up.usuario_id = u.id
-        ) AS permisos,    
-        (
             SELECT JSON_ARRAYAGG(
                 JSON_OBJECT(
                     'id', r.id,
@@ -36,8 +30,8 @@
 #+end_src
 
 #+RESULTS: my-query
-| id | usuario | email           | nombre | telefono | direccion | permisos_directos | roles                                                                                                                                                                                                |
-|----+---------+-----------------+--------+----------+-----------+-------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|  1 | fran    | fran1@gmail.com | NULL   | NULL     | NULL      | NULL              | [{"id": 1, "nombre": "ADMIN", "permisos": [{"id": 1, "nombre": "USUARIO_ALTA"},{"id": 2, "nombre": "USUARIO_BAJA"},{"id": 3, "nombre": "USUARIO_LISTAR"},{"id": 4, "nombre": "USUARIO_MODIFICAR"}]}] |
-|  2 | fran2   | fran2@gmail.com | NULL   | NULL     | NULL      | NULL              | [{"id": 2, "nombre": "EMPLEADO", "permisos": [{"id": 3, "nombre": "USUARIO_LISTAR"}]}]                                                                                                               |
-|  3 | fran3   | fran3@gmail.com | NULL   | NULL     | NULL      | NULL              | [{"id": 3, "nombre": "USUARIO", "permisos": null}]                                                                                                                                                   |
+| id | usuario | email           | nombre | telefono | direccion | roles                                                                                                                                                                                                |
+|----+---------+-----------------+--------+----------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|  1 | fran    | fran1@gmail.com | NULL   | NULL     | NULL      | [{"id": 1, "nombre": "ADMIN", "permisos": [{"id": 1, "nombre": "USUARIO_ALTA"},{"id": 2, "nombre": "USUARIO_BAJA"},{"id": 3, "nombre": "USUARIO_LISTAR"},{"id": 4, "nombre": "USUARIO_MODIFICAR"}]}] |
+|  2 | fran2   | fran2@gmail.com | NULL   | NULL     | NULL      | NULL                                                                                                                                                                                                 |
+|  3 | fran3   | fran3@gmail.com | NULL   | NULL     | NULL      | [{"id": 3, "nombre": "USUARIO", "permisos": null}]                                                                                                                                                   |

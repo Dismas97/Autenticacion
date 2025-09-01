@@ -93,20 +93,21 @@ func Registrar(c echo.Context) error {
 		log.Debug("registrar")
 		if  err := c.Bind(&u); err != nil || len(u.Usuario) < 5 || !utils.REAlfaNum.MatchString(u.Usuario) || len(u.Contra) < 8 || !utils.REAlfaNum.MatchString(u.Contra) || !utils.REEmail.MatchString(u.Email) {
 				log.Debugf("ApiRes: %v", http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrFormIncorrecto})
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrFormIncorrecto})
 		}
 		
 		u.Contra, err = encriptar(u.Contra)
 		if err == nil {
-				if _,err = sqlstruct.Alta(u); err != nil{
+				id,err := sqlstruct.Alta(u)
+				if err != nil{
 						log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-						return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+						return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 				}
 				log.Debugf("ApiRes: %v", http.StatusOK)
-				return c.JSON(http.StatusOK, map[string]string{"mensaje":utils.MsjResAltaExito})
+				return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResAltaExito,"res":map[string]int64{"id":id}})
 		} else {
-				log.Debugf("%v\nApiRes: %v", u, http.StatusBadRequest)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
 }
 
@@ -114,21 +115,21 @@ func Login(c echo.Context) error{
 		var req LoginRequest
 		if err := c.Bind(&req); err != nil {
 				log.Debugf("ApiRes: %v", http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrFormIncorrecto})
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrFormIncorrecto})
 		}
 		usuario, err := getUsuario("u.usuario", req.Usuario)
 		
 		if err != nil{
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusNotFound)
-				return c.JSON(http.StatusNotFound, map[string]string{"mensaje":utils.MsjResErrUsrNoExiste})
+				return c.JSON(http.StatusNotFound, map[string]string{"msj":utils.MsjResErrUsrNoExiste})
 		}
 		err = bcrypt.CompareHashAndPassword([]byte(usuario.Contra), []byte(req.Contra))
 		
 		if err != nil {
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrCredInvalidas})
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrCredInvalidas})
 		}
 		
         access, refresh, err := generarJWT(usuario)
@@ -140,12 +141,34 @@ func Login(c echo.Context) error{
 				if err != nil {
 						log.Error(err)
 						log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-						return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+						return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 				}
 		}
+		res := struct{				
+				Id int `json:"id" form:"id"`
+				Usuario string `json:"usuario" form:"usuario"`
+				Email string `json:"email" form:"email"`
+				Nombre *string `json:"nombre" form:"nombre"`
+				Telefono *string `json:"telefono" form:"telefono"`
+				Direccion *string `json:"direccion" form:"direccion"`
+				Roles []RolRes `json:"roles" form:"roles"`
+				RefreshToken string `json:"refresh_token" form:"refresh_token"`
+				AccessToken string `json:"access_token" form:"access_token"`
+				
+		}{
+				Id: usuario.Id,
+				Usuario: usuario.Usuario,
+				Direccion: usuario.Direccion,
+				Nombre: usuario.Nombre,
+				Telefono: usuario.Telefono,
+				Email: usuario.Email,
+				Roles: auxRoles,
+				RefreshToken: refresh,
+				AccessToken: access,
+        }
 		
 		log.Debugf("ApiRes: %v", http.StatusOK)
-        return c.JSON(http.StatusOK, map[string]any{"access_token": access, "refresh_token": refresh, "roles": auxRoles})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResExito, "res":res})
 }
 
 func AltaUsuarioRol(c echo.Context) error {
@@ -153,27 +176,29 @@ func AltaUsuarioRol(c echo.Context) error {
 		id := c.Param("id")
 		c.Bind(&aux)
 		if err = chequeoQueryData(aux,  []string{"rol_id"}); err != nil{
-				log.Debugf("%s\nApiRes: %v", err, http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrFormIncorrecto})
+				log.Error(err)
+				log.Debugf("ApiRes: %v", http.StatusBadRequest)
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrFormIncorrecto})
 		}
 
 		query := "INSERT INTO UsuarioRol (usuario_id,rol_id) VALUES (?, ?)"
 		_, err := utils.BD.Exec(query, id, aux["rol_id"])
 		if(err != nil){
-				log.Errorf("AltaUsuarioRol: %v",err)
+				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
-		return c.JSON(http.StatusOK, map[string]string{"mensaje":utils.MsjResModExito})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResModExito})
 }
 
 func BajaUsuarioRol(c echo.Context) error {
 		var aux map[string]any
 		id := c.Param("id")
 		c.Bind(&aux)
-		if err = chequeoQueryData(aux,  []string{"rol_id"}); err != nil{
-				log.Debugf("%s\nApiRes: %v", err, http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrFormIncorrecto})
+		if err = chequeoQueryData(aux, []string{"rol_id"}); err != nil{
+				log.Error(err)
+				log.Debugf("ApiRes: %v", http.StatusBadRequest)
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrFormIncorrecto})
 		}
 
 		query := "DELETE FROM UsuarioRol WHERE usuario_id = ? AND rol_id = ?"
@@ -181,9 +206,9 @@ func BajaUsuarioRol(c echo.Context) error {
 		if(err != nil){
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
-		return c.JSON(http.StatusOK, map[string]string{"mensaje":utils.MsjResBajaExito})
+		return c.JSON(http.StatusOK, map[string]string{"msj":utils.MsjResBajaExito})
 }
 
 func BuscarUsuario(c echo.Context) error {
@@ -192,7 +217,7 @@ func BuscarUsuario(c echo.Context) error {
 		if err != nil {
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
 		var aux []RolRes
 		err = nil
@@ -200,7 +225,7 @@ func BuscarUsuario(c echo.Context) error {
 		if err != nil {				
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
 		res := UsuarioDetalladoRes{
 				Id: u.Id,
@@ -211,7 +236,7 @@ func BuscarUsuario(c echo.Context) error {
 				Email: u.Email,
 				Roles: aux,
         }
-		return c.JSON(http.StatusOK, map[string]any{"mensaje":utils.MsjResExito, "datos":res})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResExito, "datos":res})
 }
 
 func ListarUsuarios(c echo.Context) error {
@@ -250,7 +275,7 @@ func ListarUsuarios(c echo.Context) error {
 		if err != nil {
 				log.Error(err)
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
 
 		var res []UsuarioDetalladoRes
@@ -262,7 +287,7 @@ func ListarUsuarios(c echo.Context) error {
 				err = nil
 				if auxUsuario.Roles != nil{err = json.Unmarshal([]byte(*auxUsuario.Roles), &auxRoles)}
 				if err != nil {
-						log.Errorf("ListarUsuarios: %v",err)
+						log.Error(err)
 						return c.JSON(http.StatusInternalServerError, map[string]string{"msj": utils.MsjResErrInterno})
 				}
 				resindex := UsuarioDetalladoRes{
@@ -276,8 +301,7 @@ func ListarUsuarios(c echo.Context) error {
 				}
 				res = append(res,resindex)
 		}
-		
-		return c.JSON(http.StatusOK, map[string]any{"mensaje":utils.MsjResExito,"datos":res})
+		return c.JSON(http.StatusOK, map[string]any{"msj":utils.MsjResExito,"res":res})
 }
 
 func ModificarUsuario(c echo.Context) error {
@@ -286,20 +310,20 @@ func ModificarUsuario(c echo.Context) error {
 		id := c.Param("id")
 		if  err := c.Bind(&u); err != nil || len(u.Usuario) < 5 || !utils.REAlfaNum.MatchString(u.Usuario) || len(u.Contra) < 8 || !utils.REAlfaNum.MatchString(u.Contra) || !utils.REEmail.MatchString(u.Email) {
 				log.Debugf("ApiRes: %v", http.StatusBadRequest)
-				return c.JSON(http.StatusBadRequest, map[string]string{"mensaje":utils.MsjResErrFormIncorrecto})
+				return c.JSON(http.StatusBadRequest, map[string]string{"msj":utils.MsjResErrFormIncorrecto})
 		}
 		
 		u.Contra, err = encriptar(u.Contra)
 		if err == nil {
 				if err = sqlstruct.Modificar(u,id); err != nil{
 						log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-						return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+						return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 				}
 				log.Debugf("ApiRes: %v", http.StatusOK)
-				return c.JSON(http.StatusOK, map[string]string{"mensaje": utils.MsjResModExito})
+				return c.JSON(http.StatusOK, map[string]string{"msj": utils.MsjResModExito})
 		} else {
-				log.Debugf("%v\nApiRes: %v", u, http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
 }
 
@@ -309,9 +333,9 @@ func BajaUsuario(c echo.Context) error {
 		
 		if err = sqlstruct.Baja("Usuario", id); err == nil {
 				log.Debugf("ApiRes: %v", http.StatusOK)
-				return c.JSON(http.StatusOK, map[string]string{"mensaje": utils.MsjResBajaExito})
+				return c.JSON(http.StatusOK, map[string]string{"msj": utils.MsjResBajaExito})
 		} else {
 				log.Debugf("ApiRes: %v", http.StatusInternalServerError)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"mensaje":utils.MsjResErrInterno})
+				return c.JSON(http.StatusInternalServerError, map[string]string{"msj":utils.MsjResErrInterno})
 		}
 }

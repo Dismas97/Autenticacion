@@ -17,7 +17,7 @@ const (
 		MsjResErrCredInvalidas = "Credenciales invalidas"
 		MsjResErrNoAutorizado = "No autorizado"
 		MsjResAltaExito = "Alta exitosa"
-		MsjResModExito = "Modificación exitosa"
+		MsjResModExito = "Actualización exitosa"
 		MsjResBajaExito = "Baja exitosa"
 		MsjResExito = "Peticion exitosa"
 )
