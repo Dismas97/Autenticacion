@@ -16,7 +16,7 @@ Crea un nuevo usuario en la bd.
 #+begin_src verb :exports both
   post /registrar
   Content-Type: application/json; charset=utf-8
-  
+
   {
   "usuario": "UsuarioAPI",
   "email": "test123@gmail.com",

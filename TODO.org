@@ -1,0 +1,49 @@
+* TODO Pendiente
+** DONE Alta Rol
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Alta Permiso
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Baja Rol
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Baja Permiso
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Listar Rol
+CLOSED: [2025-08-19 mar 22:16]
+** DONE Listar Permisos
+CLOSED: [2025-08-22 vie 01:21]
+** DONE Asignar Permiso a Rol
+CLOSED: [2025-08-18 lun 22:52]
+** DONE Quitar Permiso a Rol
+CLOSED: [2025-08-18 lun 22:52]
+** DONE Agregar Rol a Usuario
+CLOSED: [2025-08-18 lun 22:51]
+** DONE Quitar Rol a Usuario
+CLOSED: [2025-08-18 lun 22:51]
+** DONE Eliminar usuarios
+CLOSED: [2025-08-17 dom 20:43]
+** DONE Modificar usuarios
+CLOSED: [2025-08-17 dom 20:43]
+** TODO Revisar controles en usuarios
+*** Campos Alta
+*** Campos Modificar
+Actualmente modifica mal
+** TODO Terminar refresh/access tokens
+*** DONE Falta ruta [[file:controles/usuario.go::func RefreshToken(c echo.Context) error {][refresh]]
+CLOSED: [2025-08-23 sáb 01:43]
+*** DONE Falta actualizar sesion a inactiva cuando expira en bd
+CLOSED: [2025-08-23 sáb 01:43]
+*** TODO Agregar ruta logout para invalidar access tokens
+** TODO Agregar auditoría
+*** Registrar acciones de usuarios en bd
+** DONE Control de numero de peticiones por ip/cliente
+CLOSED: [2025-08-23 sáb 20:27]
+*** DONE Limitar a maximo peticiones por minuto
+CLOSED: [2025-08-30 sáb 21:26]
+** TODO Utilizar campo estado activo/inactivo de la bd
+*** Usuario inactivo no deberia poder loguearse
+*** Agregar estado "baneado"?
+** TODO Refactorizar respuestas
+** DONE Permitir multi-rol
+CLOSED: [2025-08-30 sáb 21:05]
+** TODO Empresa
+*** TODO roles-empreas
